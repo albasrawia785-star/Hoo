@@ -1,36 +1,20 @@
-name: Android CI/CD - Build APK
-
-on:
-  push:
-    branches: [ "main", "master" ]
-  pull_request:
-    branches: [ "main", "master" ]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-    # 1. جلب الكود من المستودع
-    - name: Checkout the code
-      uses: actions/checkout@v4
-
-    # 2. إعداد بيئة جافا
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'zulu'
-
-    # 3. إعداد أداة Gradle الرسمية في السيرفر لتوليد الـ wrapper السليم
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v4
-
-    # 4. إصلاح الملف التالف وبناء الـ APK من داخل مجلد المشروع
+    # 4. البحث التلقائي عن مجلد المشروع، إصلاح الـ wrapper، وبناء الـ APK
     - name: Build Debug APK
       run: |
-        cd project
-        # أمر ذكي لإعادة بناء وتوليد ملف gradle-wrapper.jar سليم 100% وتجاوز التالف
+        # البحث عن الملف المسؤول عن إعدادات المشروع
+        SETTINGS_FILE=$(find . -name "settings.gradle.kts" -o -name "settings.gradle" | head -n 1)
+        
+        if [ -z "$SETTINGS_FILE" ]; then
+          echo "Error: Android project settings file not found in repository!"
+          exit 1
+        fi
+        
+        # استخراج مسار المجلد الحقيقي والتحويل إليه
+        PROJECT_DIR=$(dirname "$SETTINGS_FILE")
+        echo "Successfully found Android project directory at: $PROJECT_DIR"
+        cd "$PROJECT_DIR"
+        
+        # توليد ملف wrapper سليم وجديد 100% لتجاوز أي ملف تالف
         gradle wrapper
         chmod +x gradlew
         ./gradlew assembleDebug
