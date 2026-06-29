@@ -1,0 +1,39 @@
+name: Build APK From ZIP
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Unzip Project
+        run: |
+          unzip "إدارة-الصيدلية.zip" -d project
+
+      - name: Find Android Project
+        run: |
+          find project -type f
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Build APK
+        run: |
+          cd project
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: APK
+          path: project/app/build/outputs/apk/debug/*.apk
